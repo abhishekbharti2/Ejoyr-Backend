@@ -8,11 +8,11 @@ router.get('/', async (req, res) => {
     const products = await Product.find();
     res.json(products);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Server error while fetching products' });
   }
 });
 
-// Get single product
+// Get single product by ID
 router.get('/:id', async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -21,26 +21,25 @@ router.get('/:id', async (req, res) => {
     }
     res.json(product);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Invalid product ID format or server error' });
   }
 });
 
 // Create new product
 router.post('/', async (req, res) => {
   try {
-    // Validate required fields
     const requiredFields = ['title', 'description', 'category', 'brand', 'supplier', 'specification', 'price', 'discount', 'stock'];
-    for (const field of requiredFields) {
-      if (!req.body[field]) {
-        return res.status(400).json({ error: `${field} is required` });
-      }
+    
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+    if (missingFields.length > 0) {
+      return res.status(400).json({ error: `Missing fields: ${missingFields.join(', ')}` });
     }
 
     const product = new Product(req.body);
     await product.save();
     res.status(201).json(product);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ error: err.message || 'Failed to create product' });
   }
 });
 
@@ -52,14 +51,14 @@ router.put('/:id', async (req, res) => {
       req.body,
       { new: true, runValidators: true }
     );
-    
+
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    
+
     res.json(product);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ error: err.message || 'Failed to update product' });
   }
 });
 
@@ -72,7 +71,7 @@ router.delete('/:id', async (req, res) => {
     }
     res.json({ message: 'Product deleted successfully' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Server error while deleting product' });
   }
 });
 
